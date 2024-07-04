@@ -15,13 +15,13 @@ main() {
 	srand(time(0x0));
 
 	/* Hyperparameters */
-	char	*datapath	= "data.mldata";
+	char	*datapath	= "resources/data.mldata";
 	i32  	layer_conf[]	= {2};
-	f32  	lr		= 0.5f;
-	i32	n_epochs	= 10;
+	f32  	lr		= 0.05f;
+	i32	n_epochs	= 1;
 
-	i32     n_main_stack	= 10000;
-	i32     n_temp_stack	= 10000;
+	i32     n_main_stack	= 100000;
+	i32     n_temp_stack	= 100000;
 
 
 	VStack main_stack = vstack(n_main_stack);
@@ -57,6 +57,7 @@ main() {
 		i32	n_params = 0;
 		net_get_params(&net, &temp_stack, &params, &n_params);
 		for (i32 i = 0; i < n_params; ++i) {
+			printf("param %1d: ", i);
 			VPRINT_DEBUG(params + i*data.input_size);
 		}
 

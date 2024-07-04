@@ -1,4 +1,4 @@
 #!/bin/sh
 
-./a.out
+./build/a.out
 

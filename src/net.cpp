@@ -1,16 +1,8 @@
-/*
-* Assumptions:
- * 1. The last layer of the etork is a single node.
- * 2. The net has maximum 100 layers.
- * 3. Each layer has maximum 10 nodes.
- * */
-
 struct Node {
 	i32	size;
 	Value	*w;
 	Value	b;
 };
-
 
 #define MAX_LAYER_SIZE 10
 struct Layer {
@@ -143,11 +135,16 @@ net_get_params(Net *net, VStack *s, Value **params, i32 *n_param) {
 		Layer *layer = &net->layers[i_layer];
 		for (i32 i_node = 0; i_node < layer->size; ++i_node) {
 			Node *node = &layer->nodes[i_node];
-			*n_param += node->size;
+			*n_param += node->size + 1;
 			for (i32 i_w = 0; i_w < node->size; ++i_w) {
 				vstack_push(s, node->w[i_w]);
 			}
+			vstack_push(s, node->b);
 		}
+	}
+	printf("n_param: %d\n", *n_param);
+	for (i32 i = 0; i < *n_param; ++i) {
+		VPRINT_DEBUG(params[i]);
 	}
 }
 
@@ -158,3 +155,4 @@ update_params(Value *params, i32 n_param, f32 lr) {
 		params[i].grad = 0.0f;
 	}
 }
+
