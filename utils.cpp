@@ -19,7 +19,8 @@ typedef signed long	b64;
 #define true 1
 #define false 0
 
-#define ArrayCount(array) (sizeof(array) / sizeof(array[0]))
+#define MAX_F32 3.402823466e+38f
 
+#define ArrayCount(array) (sizeof(array) / sizeof(array[0]))
 
 

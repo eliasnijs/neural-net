@@ -38,8 +38,8 @@ vstack_push(VStack *s, Value v) {
 
 internal Value *
 vstack_claim(VStack *s, i32 size) {
-	Value *start = &s->values[s->count];
-	s->capacity += size;
+	Value* start = &s->values[s->count];
+	s->count += size;
 	return start;
 }
 
@@ -111,3 +111,10 @@ vrand_uniform(f32 min, f32 max) {
 	return value(data);
 }
 
+internal void
+vprint(Value *v) {
+	printf("(data=%9.4f, grad=%9.4f, op=%-5s, p1=%p, p2=%p)",
+	       v->data, v->grad, OP_REPR_TABLE[v->op],
+	       (void *)v->p1, (void *)v->p2);
+}
+#define VPRINT_DEBUG(v) printf("%10s", #v); vprint(v); printf("\n");

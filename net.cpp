@@ -1,6 +1,6 @@
 /*
- * Assumptions:
- * 1. The last layer of the network is a single node.
+* Assumptions:
+ * 1. The last layer of the etork is a single node.
  * 2. The net has maximum 100 layers.
  * 3. Each layer has maximum 10 nodes.
  * */
@@ -25,36 +25,47 @@ struct Net {
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
+//// Initialization
 
-// Node operations
 internal void
 initialize_node(Node *n, i32 size, VStack *s) {
 	n->size = size;
 	n->w = vstack_claim(s, size);
 	for (i32 i = 0; i < size; ++i) {
 		n->w[i] = vrand_uniform(-1.0f, 1.0f);
-		printf("w[%d]: %9.4f\n", i, n->w[i].data);
 	}
 	n->b = vrand_uniform(-1.0f, 1.0f);
-	printf("b: %9.4f\n", n->b.data);
 }
 
-internal Value
-node_forward(Node *n, Value *xs, VStack *s) {
-	Value *sum = value(0.0f, s);
-	for (i32 i = 0; i < n->size; ++i) {
-		sum = vadd(sum, vmul(&n->w[i], &xs[i], s), s);
-	}
-	return vtanh(vadd(sum, &n->b, s));
-}
-
-// Layer operations
 internal void
 initialize_layer(Layer *l, i32 size, i32 nodesize, VStack *s) {
 	l->size = size;
 	for (i32 i = 0; i < size; ++i) {
 		initialize_node(&l->nodes[i], nodesize, s);
 	}
+}
+
+internal void
+initialize_net(Net *n, i32 size, i32 *layer_sizes, i32 input_size, VStack *s) {
+	n->size = size;
+	initialize_layer(&n->layers[0], layer_sizes[0], input_size, s);
+	for (i32 i = 1; i < size; ++i) {
+		initialize_layer(&n->layers[i], layer_sizes[i], layer_sizes[i-1], s);
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//// Forward pass
+
+internal Value
+node_forward(Node *n, Value *xs, VStack *s) {
+	Value *sum = value(0.0f, s);
+	for (i32 i = 0; i < n->size; ++i) {
+		Value *x_ = vmul(&n->w[i], &xs[i], s);
+		sum = vadd(sum, x_, s);
+	}
+	return vtanh(vadd(sum, &n->b, s));
 }
 
 internal Value *
@@ -66,16 +77,6 @@ layer_forward(Layer *l, Value *input, VStack *s) {
 	return o;
 }
 
-// Net operations
-internal void
-initialize_net(Net *n, i32 size, i32 *layer_sizes, i32 input_size, VStack *s) {
-	n->size = size;
-	initialize_layer(&n->layers[0], layer_sizes[0], input_size, s);
-	for (i32 i = 1; i < size; ++i) {
-		initialize_layer(&n->layers[i], layer_sizes[i], layer_sizes[i-1], s);
-	}
-}
-
 internal Value *
 net_forward(Net *n, Value *xs, VStack *s) {
 	Value *input = xs;
@@ -85,14 +86,14 @@ net_forward(Net *n, Value *xs, VStack *s) {
 	return input;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//// Backward pass
+
 internal void
 backward_(Value *y, i32 step) {
 	if (!y || y->op == OP_NONE) {
 		return;
 	}
-
-	printf("%d - %p: y=(data=%9.4f, grad=%9.4f, op=%s, p1=%p, p2=%p)\n",
-	       step, (void *)y, y->data, y->grad, OP_REPR_TABLE[y->op], (void *)y->p1, (void *)y->p2);
 
 	Value *x1 = y->p1;
 	Value *x2 = y->p2;
@@ -157,4 +158,3 @@ update_params(Value *params, i32 n_param, f32 lr) {
 		params[i].grad = 0.0f;
 	}
 }
-
