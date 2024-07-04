@@ -1,26 +1,3 @@
-/*
-we  are building a parser for the following data format "data.mldata", which
-looks like:
-```
-[metadata]
-samples=4
-input_size=3
-output_size=1
-
-[xs]
-2.0,  3.0, -1.0
-3.0, -1.0,  0.5
-0.5,  1.0,  1.0
-1.0,  1.0, -1.0
-
-[ys]
-1.0
--1.0
--1.0
-1.0
-```
-*/
-
 struct Dataset {
 	i32 samples;
 	i32 input_size;
@@ -58,11 +35,11 @@ load_data(char *path, VStack *s) {
 	}
 
 	ptr = strchr(ptr, '\n') + 1;
-	sscanf(ptr, "input_size=%d\n", &result.samples);
+	sscanf(ptr, "n_samples=%d\n", &result.samples);
 	ptr = strchr(ptr, '\n') + 1;
-	sscanf(ptr, "input_size=%d\n", &result.input_size);
+	sscanf(ptr, "n_input=%d\n", &result.input_size);
 	ptr = strchr(ptr, '\n') + 1;
-	sscanf(ptr, "output_size=%d\n", &result.output_size);
+	sscanf(ptr, "n_output=%d\n", &result.output_size);
 
 
 	ptr = strstr(buffer, "[xs]");

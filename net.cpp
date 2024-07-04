@@ -154,7 +154,7 @@ net_get_params(Net *net, VStack *s, Value **params, i32 *n_param) {
 internal void
 update_params(Value *params, i32 n_param, f32 lr) {
 	for (i32 i = 0; i < n_param; ++i) {
-		params[i].data = -lr * params[i].grad;
+		params[i].data += -lr * params[i].grad;
 		params[i].grad = 0.0f;
 	}
 }

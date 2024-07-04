@@ -1,15 +1,14 @@
 
-internal Value *
-mean_squared_error(Net *net, Value *n, Value **xs, Value *ys, VStack *s) {
+internal Value
+MSE_1d(Value **out, Value *ground, i32 n_samples, i32 n_outputs, VStack *s)
+{
+	Value *n = value((f32)n_samples, s);
 	Value *total_loss = value(0.0, s);
-	for (i32 i = 0; i < n->data; ++i) {
-		Value *o = net_forward(net, xs[i], s);
-
-		Value *loss = vsub(o, &ys[i], s);
-		loss = vmul(loss, loss, s);
-
-		total_loss = vadd(total_loss, loss, s);
+	for (i32 i = 0; i < n_samples; ++i) {
+		Value *loss = vsub(out[i * n_outputs], &ground[i * n_outputs], s);
+		Value *loss_sq = vmul(loss, loss, s);
+		total_loss = vadd(total_loss, loss_sq, s);
 	}
-	return vdiv(total_loss, n, s);
+	return vdiv(total_loss, n);
 }
 

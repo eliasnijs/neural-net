@@ -1,7 +1,7 @@
 [metadata]
-samples=4
-input_size=3
-output_size=1
+n_samples=4
+n_input=3
+n_output=1
 
 [xs]
 2.0,  3.0, -1.0
