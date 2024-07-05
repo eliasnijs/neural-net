@@ -19,7 +19,7 @@ main() {
 	char	*datapath	= "resources/data.mldata";
 	i32  	layer_conf[]	= {4, 1};
 
-	f32  	lr		= 0.05f;
+	f32  	lr		= 0.005f;
 
 	i32	n_epochs	= 10000000;
 	f32	loss_threshold	= 0.0001f;
@@ -31,6 +31,7 @@ main() {
 
 
 	VStack main_stack = vstack(n_main_stack);
+	VStack temp_stack = vstack(n_temp_stack);
 
 	/* Load the data */
 	Dataset data = load_data(datapath, &main_stack);
@@ -43,7 +44,6 @@ main() {
 	/* Train the model */
 	b32 running = true;
 	for (i32 i = 0; i < n_epochs + 1 && running; ++i) {
-		VStack temp_stack = vstack(n_temp_stack);
 
 		Value *os[1000] = {}; /* TODO: Use an arena for the temp stack */
 
@@ -77,9 +77,10 @@ main() {
 			net_update_params(&net, lr);
 		}
 
-		vstack_die(&temp_stack);
+		vstack_reset(&temp_stack);
 	}
 
+	vstack_die(&temp_stack);
 	vstack_die(&main_stack);
 	return 0;
 }

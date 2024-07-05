@@ -29,6 +29,10 @@ vstack_die(VStack *s) {
 	s->values = 0x0;
 }
 
+internal void
+vstack_reset(VStack *s) {
+	s->count = 0;
+}
 
 internal Value *
 vstack_push(VStack *s, Value v) {
