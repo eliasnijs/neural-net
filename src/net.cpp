@@ -82,7 +82,7 @@ net_forward(Net *n, Value *xs, VStack *s) {
 //// Backward pass
 
 internal void
-backward_(Value *y, i32 step) {
+backward_(Value *y) {
 	if (!y || y->op == OP_NONE) {
 		return;
 	}
@@ -115,44 +115,29 @@ backward_(Value *y, i32 step) {
 		} break;
 	}
 
-	// ask for input
-
-	backward_(x1, step+1);
-	backward_(x2, step+1);
+	backward_(x1);
+	backward_(x2);
 }
 
 internal void
 backward(Value *y) {
 	y->grad = 1.0f;
-	backward_(y, 1);
+	backward_(y);
 }
 
 internal void
-net_get_params(Net *net, VStack *s, Value **params, i32 *n_param) {
-	*n_param = 0;
-	*params = &s->values[s->count];
+net_update_params(Net *net, f32 lr) {
 	for (i32 i_layer = 0; i_layer < net->size; ++i_layer) {
 		Layer *layer = &net->layers[i_layer];
 		for (i32 i_node = 0; i_node < layer->size; ++i_node) {
 			Node *node = &layer->nodes[i_node];
-			*n_param += node->size + 1;
 			for (i32 i_w = 0; i_w < node->size; ++i_w) {
-				vstack_push(s, node->w[i_w]);
+				node->w[i_w].data += -lr * node->w[i_w].grad;
+				node->w[i_w].grad = 0.0f;
 			}
-			vstack_push(s, node->b);
+			node->b.data += -lr * node->b.grad;
+			node->b.grad = 0.0f;
 		}
-	}
-	printf("n_param: %d\n", *n_param);
-	for (i32 i = 0; i < *n_param; ++i) {
-		VPRINT_DEBUG(params[i]);
-	}
-}
-
-internal void
-update_params(Value *params, i32 n_param, f32 lr) {
-	for (i32 i = 0; i < n_param; ++i) {
-		params[i].data += -lr * params[i].grad;
-		params[i].grad = 0.0f;
 	}
 }
 
