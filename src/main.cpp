@@ -52,8 +52,7 @@ main() {
 					    &temp_stack);
 		}
 
-		Value loss = MSE_1d(os, data.ys, data.samples, data.output_size,
-				    &temp_stack);
+		Value loss = MSE(os, data.ys, data.samples, data.output_size, &temp_stack);
 
 		if (i % epochs_per_log == 0) {
 			printf("Epoch %03d: loss: %f\n", i, loss.data);
