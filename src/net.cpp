@@ -4,16 +4,14 @@ struct Node {
 	Value	b;
 };
 
-#define MAX_LAYER_SIZE 10
 struct Layer {
 	I32	size;
-	Node	nodes[MAX_LAYER_SIZE];
+	Node	*nodes;
 };
 
-#define MAX_LAYER_COUNT 100
 struct Net {
 	I32	size;
-	Layer	layers[MAX_LAYER_COUNT];
+	Layer	*layers;
 };
 
 
@@ -33,6 +31,7 @@ initialize_node(Node *n, I32 size, Arena *a) {
 internal void
 initialize_layer(Layer *l, I32 size, I32 nodesize, Arena *a) {
 	l->size = size;
+	l->nodes = (Node *)arena_alloc(a, size * sizeof(Node));
 	for (I32 i = 0; i < size; ++i) {
 		initialize_node(&l->nodes[i], nodesize, a);
 	}
@@ -41,6 +40,7 @@ initialize_layer(Layer *l, I32 size, I32 nodesize, Arena *a) {
 internal void
 initialize_net(Net *n, I32 size, I32 *layer_sizes, I32 input_size, Arena *a) {
 	n->size = size;
+	n->layers = (Layer *)arena_alloc(a, size * sizeof(Layer));
 	initialize_layer(&n->layers[0], layer_sizes[0], input_size, a);
 	for (I32 i = 1; i < size; ++i) {
 		initialize_layer(&n->layers[i], layer_sizes[i], layer_sizes[i-1], a);

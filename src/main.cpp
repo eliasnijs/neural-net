@@ -32,6 +32,7 @@ main() {
 	I32     n_temp_arena	= 100000;
 
 
+	/* Initialize memory arenas */
 	Arena main_arena, inter_arena;
 	arena_init(&main_arena, (U8 *)malloc(n_main_arena), n_main_arena);
 	arena_init(&inter_arena, (U8 *)malloc(n_temp_arena), n_temp_arena);
