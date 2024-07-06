@@ -1,18 +1,18 @@
 struct Node {
-	i32	size;
+	I32	size;
 	Value	*w;
 	Value	b;
 };
 
 #define MAX_LAYER_SIZE 10
 struct Layer {
-	i32	size;
+	I32	size;
 	Node	nodes[MAX_LAYER_SIZE];
 };
 
 #define MAX_LAYER_COUNT 100
 struct Net {
-	i32	size;
+	I32	size;
 	Layer	layers[MAX_LAYER_COUNT];
 };
 
@@ -21,29 +21,29 @@ struct Net {
 //// Initialization
 
 internal void
-initialize_node(Node *n, i32 size, VStack *s) {
+initialize_node(Node *n, I32 size, Arena *a) {
 	n->size = size;
-	n->w = vstack_claim(s, size);
-	for (i32 i = 0; i < size; ++i) {
+	n->w = (Value *)arena_alloc(a, size * sizeof(Value));
+	for (I32 i = 0; i < size; ++i) {
 		n->w[i] = vrand_uniform(-1.0f, 1.0f);
 	}
 	n->b = vrand_uniform(-1.0f, 1.0f);
 }
 
 internal void
-initialize_layer(Layer *l, i32 size, i32 nodesize, VStack *s) {
+initialize_layer(Layer *l, I32 size, I32 nodesize, Arena *a) {
 	l->size = size;
-	for (i32 i = 0; i < size; ++i) {
-		initialize_node(&l->nodes[i], nodesize, s);
+	for (I32 i = 0; i < size; ++i) {
+		initialize_node(&l->nodes[i], nodesize, a);
 	}
 }
 
 internal void
-initialize_net(Net *n, i32 size, i32 *layer_sizes, i32 input_size, VStack *s) {
+initialize_net(Net *n, I32 size, I32 *layer_sizes, I32 input_size, Arena *a) {
 	n->size = size;
-	initialize_layer(&n->layers[0], layer_sizes[0], input_size, s);
-	for (i32 i = 1; i < size; ++i) {
-		initialize_layer(&n->layers[i], layer_sizes[i], layer_sizes[i-1], s);
+	initialize_layer(&n->layers[0], layer_sizes[0], input_size, a);
+	for (I32 i = 1; i < size; ++i) {
+		initialize_layer(&n->layers[i], layer_sizes[i], layer_sizes[i-1], a);
 	}
 }
 
@@ -51,29 +51,29 @@ initialize_net(Net *n, i32 size, i32 *layer_sizes, i32 input_size, VStack *s) {
 //// Forward pass
 
 internal Value
-node_forward(Node *n, Value *xs, VStack *s) {
-	Value *sum = value(0.0f, s);
-	for (i32 i = 0; i < n->size; ++i) {
-		Value *x_ = vmul(&n->w[i], &xs[i], s);
-		sum = vadd(sum, x_, s);
+node_forward(Node *n, Value *xs, Arena *a) {
+	Value *sum = value(0.0f, a);
+	for (I32 i = 0; i < n->size; ++i) {
+		Value *x_ = vmul(&n->w[i], &xs[i], a);
+		sum = vadd(sum, x_, a);
 	}
-	return vtanh(vadd(sum, &n->b, s));
+	return vtanh(vadd(sum, &n->b, a));
 }
 
 internal Value *
-layer_forward(Layer *l, Value *input, VStack *s) {
-	Value *o = vstack_claim(s, l->size);
-	for (i32 i = 0; i < l->size; ++i) {
-		o[i] = node_forward(&l->nodes[i], input, s);
+layer_forward(Layer *l, Value *input, Arena *a) {
+	Value *o = (Value *)arena_alloc(a, l->size * sizeof(Value));
+	for (I32 i = 0; i < l->size; ++i) {
+		o[i] = node_forward(&l->nodes[i], input, a);
 	}
 	return o;
 }
 
 internal Value *
-net_forward(Net *n, Value *xs, VStack *s) {
+net_forward(Net *n, Value *xs, Arena *a) {
 	Value *input = xs;
-	for (i32 i = 0; i < n->size; ++i) {
-		input = layer_forward(&n->layers[i], input, s);
+	for (I32 i = 0; i < n->size; ++i) {
+		input = layer_forward(&n->layers[i], input, a);
 	}
 	return input;
 }
@@ -126,12 +126,12 @@ backward(Value *y) {
 }
 
 internal void
-net_update_params(Net *net, f32 lr) {
-	for (i32 i_layer = 0; i_layer < net->size; ++i_layer) {
+net_update_params(Net *net, F32 lr) {
+	for (I32 i_layer = 0; i_layer < net->size; ++i_layer) {
 		Layer *layer = &net->layers[i_layer];
-		for (i32 i_node = 0; i_node < layer->size; ++i_node) {
+		for (I32 i_node = 0; i_node < layer->size; ++i_node) {
 			Node *node = &layer->nodes[i_node];
-			for (i32 i_w = 0; i_w < node->size; ++i_w) {
+			for (I32 i_w = 0; i_w < node->size; ++i_w) {
 				node->w[i_w].data += -lr * node->w[i_w].grad;
 				node->w[i_w].grad = 0.0f;
 			}

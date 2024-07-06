@@ -1,22 +1,22 @@
 struct Dataset {
-	i32 samples;
-	i32 input_size;
-	i32 output_size;
+	I32 n_samples;
+	I32 n_in;
+	I32 n_out;
 	Value *xs;
 	Value *ys;
-	b32 success;
+	B32 success;
 };
 
 internal Dataset
-load_data(char *path, VStack *s) {
-	Dataset result = {};
+load_data(char *path, Arena *a) {
+	Dataset dataset = {};
 
 	FILE *file = fopen(path, "r");
 	if (!file) {
 		printf("error: could not open file %s\n", path);
 		exit(1);
 	}
-	i32 l_file = 0;
+	I32 l_file = 0;
 	fseek(file, 0, SEEK_END);
 	l_file = ftell(file);
 	fseek(file, 0, SEEK_SET);
@@ -30,59 +30,46 @@ load_data(char *path, VStack *s) {
 	ptr = strstr(buffer, "[metadata]");
 	if (!ptr) {
 		printf("error: metadata not found\n");
-		result.success = false;
-		return result;
+		return dataset;
 	}
 
 	ptr = strchr(ptr, '\n') + 1;
-	sscanf(ptr, "n_samples=%d\n", &result.samples);
+	sscanf(ptr, "n_samples=%d\n", &dataset.n_samples);
 	ptr = strchr(ptr, '\n') + 1;
-	sscanf(ptr, "n_input=%d\n", &result.input_size);
+	sscanf(ptr, "n_input=%d\n", &dataset.n_in);
 	ptr = strchr(ptr, '\n') + 1;
-	sscanf(ptr, "n_output=%d\n", &result.output_size);
+	sscanf(ptr, "n_output=%d\n", &dataset.n_out);
 
 
-	ptr = strstr(buffer, "[xs]");
+	Value *xs = (Value *)arena_alloc(a, dataset.n_in * dataset.n_samples * sizeof(Value));
+	Value *ys = (Value *)arena_alloc(a, dataset.n_out * dataset.n_samples * sizeof(Value));
+	dataset.ys = ys;
+	dataset.xs = xs;
+
+	ptr = strstr(buffer, "[data]");
 	if (!ptr) {
-		printf("error: metadata not found\n");
-		result.success = false;
-		return result;
+		printf("error: data not found\n");
+		return dataset;
 	}
 
-	Value *xs = vstack_claim(s, result.input_size * result.samples);
-	result.xs = xs;
-
-	for (i32 i = 0; i < result.samples; ++i) {
-		ptr = strchr(ptr, '\n') + 1;
-		for (i32 j = 0; j < result.input_size; ++j) {
-			f32 value_data = MAX_F32;
+	F32 value_data = MAX_F32;
+	for (I32 i = 0; i < dataset.n_samples; ++i) {
+		ptr = strchr(ptr, '\n');
+		for (I32 j = 0; j < dataset.n_in; ++j) {
 			sscanf(ptr, "%f", &value_data);
-			xs[i * result.input_size + j] = value(value_data);
-			if (j < result.input_size - 1) {
+			xs[i*dataset.n_in + j] = value(value_data);
+			ptr = strchr(ptr, ',') + 1;
+		}
+		for (I32 j = 0; j < dataset.n_out; ++j) {
+			sscanf(ptr, "%f", &value_data);
+			ys[i * dataset.n_out + j] = value(value_data);
+			if (j < dataset.n_out - 1) {
 				ptr = strchr(ptr, ',') + 1;
 			}
 		}
 	}
 
-	ptr = strstr(buffer, "[ys]");
-	if (!ptr) {
-		printf("error: metadata not found\n");
-		result.success = false;
-		return result;
-	}
-
-	Value *ys = vstack_claim(s, result.output_size * result.samples);
-	result.ys = ys;
-
-	for (i32 i = 0; i < result.samples; ++i) {
-		ptr = strchr(ptr, '\n') + 1;
-		f32 value_data = MAX_F32;
-		sscanf(ptr, "%f", &value_data);
-		ys[i] = value(value_data);
-	}
-
-
+	dataset.success = true;
 	free(buffer);
-
-	return result;
+	return dataset;
 }

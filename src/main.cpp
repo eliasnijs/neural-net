@@ -5,57 +5,67 @@
 #include <omp.h>
 
 #include "utils.cpp"
+#include "arena.cpp"
+
 #include "value.cpp"
 #include "dataloader.cpp"
 #include "net.cpp"
 #include "loss.cpp"
 
 
-i32
+I32
 main() {
 	srand(time(0x0));
 
 	/* Hyperparameters */
 	char	*datapath	= "resources/data.mldata";
-	i32  	layer_conf[]	= {4, 1};
+	I32  	layer_conf[]	= {4, 2};
 
-	f32  	lr		= 0.005f;
+	F32  	lr		= 0.05f;
 
-	i32	n_epochs	= 10000000;
-	f32	loss_threshold	= 0.0001f;
+	I32	n_epochs	= 40;
+	F32	loss_threshold	= 0.0001f;
 
-	i32	epochs_per_log	= 500;
+	I32	epochs_per_log	= 5;
 
-	i32     n_main_stack	= 100000;
-	i32     n_temp_stack	= 100000;
+	I32     n_main_arena	= 100000;
+	I32     n_temp_arena	= 100000;
 
 
-	VStack main_stack = vstack(n_main_stack);
-	VStack temp_stack = vstack(n_temp_stack);
+	Arena main_arena, inter_arena;
+	arena_init(&main_arena, (U8 *)malloc(n_main_arena), n_main_arena);
+	arena_init(&inter_arena, (U8 *)malloc(n_temp_arena), n_temp_arena);
+
 
 	/* Load the data */
-	Dataset data = load_data(datapath, &main_stack);
+	Dataset data = load_data(datapath, &main_arena);
+	if (!data.success) {
+		printf("error: failed to load dataset\n");
+		free(main_arena.buf);
+		free(inter_arena.buf);
+		return 1;
+	}
 
 	/* Initialize a new model */
 	Net net = {};
-	initialize_net(&net, ArrayCount(layer_conf), layer_conf,
-		       data.input_size, &main_stack);
+	initialize_net(&net, ArrayCount(layer_conf), layer_conf, data.n_in,
+		       &main_arena);
 
 	/* Train the model */
-	b32 running = true;
-	for (i32 i = 0; i < n_epochs + 1 && running; ++i) {
+	B32 running = true;
+	for (I32 i = 0; i < n_epochs + 1 && running; ++i) {
+		Value **os = (Value **)arena_alloc(&inter_arena, data.n_samples * sizeof(Value *));
 
-		Value *os[1000] = {}; /* TODO: Use an arena for the temp stack */
-
-		for (i32 i = 0; i < data.samples; ++i) {
-			os[i] = net_forward(&net, &data.xs[i * data.input_size],
-					    &temp_stack);
+		for (I32 i = 0; i < data.n_samples; ++i) {
+			os[i] = net_forward(&net, &data.xs[i * data.n_in],
+					    &inter_arena);
 		}
 
-		Value loss = MSE(os, data.ys, data.samples, data.output_size, &temp_stack);
+		Value loss = MSE(os, data.ys, data.n_samples, data.n_out,
+				 &inter_arena);
 
 		if (i % epochs_per_log == 0) {
-			printf("Epoch %03d: loss: %f\n", i, loss.data);
+			printf("Epoch %6d: loss: %f\n", i, loss.data);
 		}
 
 
@@ -76,10 +86,10 @@ main() {
 			net_update_params(&net, lr);
 		}
 
-		vstack_reset(&temp_stack);
+		arena_reset(&inter_arena);
 	}
 
-	vstack_die(&temp_stack);
-	vstack_die(&main_stack);
+	free(main_arena.buf);
+	free(inter_arena.buf);
 	return 0;
 }

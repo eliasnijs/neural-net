@@ -1,16 +1,17 @@
-typedef unsigned short	u16;
-typedef unsigned int	u32;
-typedef unsigned long	u64;
-typedef signed char	i8;
-typedef signed short	i16;
-typedef signed int	i32;
-typedef signed long	i64;
-typedef float		f32;
-typedef double		f64;
-typedef signed char	b8;
-typedef signed short	b16;
-typedef signed int	b32;
-typedef signed long	b64;
+typedef unsigned char	U8;
+typedef unsigned short	U16;
+typedef unsigned int	U32;
+typedef unsigned long	U64;
+typedef signed char	I8;
+typedef signed short	I16;
+typedef signed int	I32;
+typedef signed long	I64;
+typedef float		F32;
+typedef double		F64;
+typedef signed char	B8;
+typedef signed short	B16;
+typedef signed int	B32;
+typedef signed long	B64;
 
 #define internal	static
 #define global_variable static
@@ -22,5 +23,5 @@ typedef signed long	b64;
 #define MAX_F32 3.402823466e+38f
 
 #define ArrayCount(array) (sizeof(array) / sizeof(array[0]))
-
+#define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 

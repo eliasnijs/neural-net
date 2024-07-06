@@ -4,57 +4,25 @@ global_variable const char *OP_REPR_TABLE[] = {
 };
 
 struct Value {
-	f32 data;
-	f32 grad;
+	F32 data;
+	F32 grad;
 
 	Operand op;
 	Value *p1;
 	Value *p2;
 };
 
-struct VStack {
-	i32	count;
-	i32	capacity;
-	Value	*values;
-};
-
-internal VStack
-vstack(i32 capacity) {
-	return {0, capacity, (Value *)calloc(capacity, sizeof(Value))};
-}
-
-internal void
-vstack_die(VStack *s) {
-	free(s->values);
-	s->values = 0x0;
-}
-
-internal void
-vstack_reset(VStack *s) {
-	s->count = 0;
-}
-
-internal Value *
-vstack_push(VStack *s, Value v) {
-	s->values[s->count++] = v;
-	return &s->values[s->count-1];
-}
-
-internal Value *
-vstack_claim(VStack *s, i32 size) {
-	Value* start = &s->values[s->count];
-	s->count += size;
-	return start;
-}
-
 internal Value
-value(f32 value) {
+value(F32 value) {
 	return {value, 0.0f, OP_NONE, 0x0, 0x0};
 }
 
 internal Value *
-value(f32 value, VStack *s) {
-	return vstack_push(s, {value, 0.0f, OP_NONE, 0x0, 0x0});
+value(F32 value, Arena *a) {
+	Value *v = (Value *)arena_alloc(a, sizeof(Value));
+	*v = {value, 0.0f, OP_NONE, 0x0, 0x0};
+	return v;
+
 }
 
 internal Value
@@ -63,8 +31,10 @@ vadd(Value *a1, Value *a2) {
 }
 
 internal Value *
-vadd(Value *a1, Value *a2, VStack *s) {
-	return vstack_push(s, {a1->data + a2->data, 0.0f, OP_ADD, a1, a2});
+vadd(Value *a1, Value *a2, Arena *a) {
+	Value *v = (Value *)arena_alloc(a, sizeof(Value));
+	*v = {a1->data + a2->data, 0.0f, OP_ADD, a1, a2};
+	return v;
 }
 
 internal Value
@@ -73,8 +43,10 @@ vsub(Value *a1, Value *a2) {
 }
 
 internal Value *
-vsub(Value *a1, Value *a2, VStack *s) {
-	return vstack_push(s, {a1->data - a2->data, 0.0f, OP_SUB, a1, a2});
+vsub(Value *a1, Value *a2, Arena *a) {
+	Value *v = (Value *)arena_alloc(a, sizeof(Value));
+	*v = {a1->data - a2->data, 0.0f, OP_SUB, a1, a2};
+	return v;
 }
 
 internal Value
@@ -83,8 +55,10 @@ vmul(Value *a1, Value *a2) {
 }
 
 internal Value *
-vmul(Value *a1, Value *a2, VStack *s) {
-	return vstack_push(s, {a1->data * a2->data, 0.0f, OP_MUL, a1, a2});
+vmul(Value *a1, Value *a2, Arena *a) {
+	Value *v = (Value *)arena_alloc(a, sizeof(Value));
+	*v = {a1->data * a2->data, 0.0f, OP_MUL, a1, a2};
+	return v;
 }
 
 internal Value
@@ -93,25 +67,29 @@ vdiv(Value *a1, Value *a2) {
 }
 
 internal Value *
-vdiv(Value *a1, Value *a2, VStack *s) {
-	return vstack_push(s, {a1->data / a2->data, 0.0f, OP_DIV, a1, a2});
+vdiv(Value *a1, Value *a2, Arena *a) {
+	Value *v = (Value *)arena_alloc(a, sizeof(Value));
+	*v = {a1->data / a2->data, 0.0f, OP_DIV, a1, a2};
+	return v;
 }
 
 internal Value
 vtanh(Value *a1) {
-	f32 t = exp(2 * a1->data);
+	F32 t = exp(2 * a1->data);
 	return { (t - 1)/(t + 1), 0.0f, OP_TANH, a1, 0x0 };
 }
 
 internal Value *
-vtanh(Value *a1, VStack *s) {
-	f32 t = exp(2 * a1->data);
-	return vstack_push(s, {(t - 1)/(t + 1), 0.0f, OP_TANH, a1, 0x0});
+vtanh(Value *a1, Arena *a) {
+	Value *v = (Value *)arena_alloc(a, sizeof(Value));
+	F32 t = exp(2 * a1->data);
+	*v = { (t - 1)/(t + 1), 0.0f, OP_TANH, a1, 0x0 };
+	return v;
 }
 
 internal Value
-vrand_uniform(f32 min, f32 max) {
-	f32 data = min + (f32)rand() / ((f32)RAND_MAX / (max - min));
+vrand_uniform(F32 min, F32 max) {
+	F32 data = min + (F32)rand() / ((F32)RAND_MAX / (max - min));
 	return value(data);
 }
 
