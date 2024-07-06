@@ -21,16 +21,14 @@
  * | *ptr2 = 42;
  * |
  * | // ptr == ptr2
- * |
- * | arena_die(&arena);
  *
  */
 
 struct Arena {
 	U8  *buf;          /* ptr to the reserved memory bufer for the arena */
-	U16 len;           /* length of the reserved memory */
-	U16 offset_curr;   /* current offset into the bufer */
-	U16 offset_prev;   /* previous offset into the bufer */
+	U32 len;           /* length of the reserved memory */
+	U32 offset_curr;   /* current offset into the bufer */
+	U32 offset_prev;   /* previous offset into the bufer */
 };
 
 /* default memory alignment, = 16, checkout (`Streaming
@@ -38,12 +36,6 @@ struct Arena {
 #ifndef MEM_DEFAULT_ALIGNMENT
 #define MEM_DEFAULT_ALIGNMENT (2*sizeof(void *))
 #endif
-
-/* allocate memory in a memory arena */
-internal void * arena_alloc(Arena *a, U16 len);
-
-/* free allocated memory in the arena ( ! does nothing ) */
-internal void arena_free(Arena *a, void *ptr);
 
 ////////////////////////////////////////////////////////////////////////////////
 //// Helper Functions
@@ -56,7 +48,7 @@ is_pow_of_two(uintptr_t addr) {
 
 /* push a pointer to the next aligned value */
 internal uintptr_t
-align_forward(uintptr_t p, U16 align) {
+align_forward(uintptr_t p, U64 align) {
 	uintptr_t a, m;
 
 	Assert( is_pow_of_two(align) );
@@ -75,11 +67,12 @@ align_forward(uintptr_t p, U16 align) {
 
 /* initialise an arena */
 internal void
-arena_init(Arena *a, void *backbuffer, U16 l) {
+arena_init(Arena *a, void *backbuffer, U32 l) {
 	a->buf = (U8 *)backbuffer;
 	a->len = l;
 	a->offset_curr = 0;
 	a->offset_prev = 0;
+	print_info("arena initialised w/ size %d", l);
 }
 
 /* destroy an arena */
@@ -92,13 +85,15 @@ arena_reset(Arena *a) {
 /* allocate memory in a memory arena with alignment specified */
 /* IMPORTANT(Elias): memory is not guaranteed to be 0! */
 internal void *
-arena_alloc_align(Arena *a, U16 len, U16 align) {
-	void *ptr;
-	uintptr_t ptr_curr, offset;
+arena_alloc_align(Arena *a, U32 len, U32 align) {
+	if (a->offset_curr + len > a->len) {
+		print_error("error: arena out of memory, allocation failed");
+		return 0x0;
+	}
 
-	ptr = 0x0;
-	ptr_curr = (uintptr_t)a->buf + (uintptr_t)a->offset_curr;
-	offset = align_forward(ptr_curr, align) - (uintptr_t)a->buf;
+	void *ptr = 0x0;
+	uintptr_t ptr_curr = (uintptr_t)a->buf + (uintptr_t)a->offset_curr;
+	uintptr_t offset = align_forward(ptr_curr, align) - (uintptr_t)a->buf;
 
 	if (offset + len <= a->len)
 	{
@@ -113,7 +108,7 @@ arena_alloc_align(Arena *a, U16 len, U16 align) {
 /* allocate memory in a memory arena */
 /* IMPORTANT(Elias): memory is not guaranteed to be 0! */
 internal void *
-arena_alloc(Arena *a, U16 len) {
+arena_alloc(Arena *a, U32 len) {
 	return arena_alloc_align(a, len, MEM_DEFAULT_ALIGNMENT);
 }
 

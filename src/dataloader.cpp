@@ -13,7 +13,7 @@ load_data(char *path, Arena *a) {
 
 	FILE *file = fopen(path, "r");
 	if (!file) {
-		printf("error: could not open file %s\n", path);
+		print_error("could not open file %s", path);
 		exit(1);
 	}
 	I32 l_file = 0;
@@ -29,7 +29,7 @@ load_data(char *path, Arena *a) {
 
 	ptr = strstr(buffer, "[metadata]");
 	if (!ptr) {
-		printf("error: metadata not found\n");
+		print_error("metadata not found");
 		return dataset;
 	}
 
@@ -40,19 +40,24 @@ load_data(char *path, Arena *a) {
 	ptr = strchr(ptr, '\n') + 1;
 	sscanf(ptr, "n_output=%d\n", &dataset.n_out);
 
-
 	Value *xs = (Value *)arena_alloc(a, dataset.n_in * dataset.n_samples * sizeof(Value));
 	Value *ys = (Value *)arena_alloc(a, dataset.n_out * dataset.n_samples * sizeof(Value));
+	if (!xs || !ys) {
+		free(buffer);
+		print_error("could not allocate memory for dataset");
+		return dataset;
+	}
 	dataset.ys = ys;
 	dataset.xs = xs;
 
 	ptr = strstr(buffer, "[data]");
 	if (!ptr) {
-		printf("error: data not found\n");
+		free(buffer);
+		print_error("data not found");
 		return dataset;
 	}
 
-	F32 value_data = MAX_F32;
+	F32 value_data = F32_MAX;
 	for (I32 i = 0; i < dataset.n_samples; ++i) {
 		ptr = strchr(ptr, '\n');
 		for (I32 j = 0; j < dataset.n_in; ++j) {

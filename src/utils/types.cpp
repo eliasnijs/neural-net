@@ -1,3 +1,6 @@
+////////////////////////////////////////////////////////////////////////////////
+//// Types and constants
+
 typedef unsigned char	U8;
 typedef unsigned short	U16;
 typedef unsigned int	U32;
@@ -19,9 +22,4 @@ typedef signed long	B64;
 
 #define true 1
 #define false 0
-
-#define MAX_F32 3.402823466e+38f
-
-#define ArrayCount(array) (sizeof(array) / sizeof(array[0]))
-#define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 

@@ -1,0 +1,16 @@
+#ifndef UTILS_INCLUDE
+
+////////////////////////////////////////////////////////////////////////////////
+//// General utilities
+#include "ansii_escape_codes.cpp"
+#include "types.cpp"
+#include "helpermacros.cpp"
+#include "debug.cpp"
+
+////////////////////////////////////////////////////////////////////////////////
+//// Memory management
+#include "arena.cpp"
+
+#define UTILS_INCLUDE
+#endif
+

@@ -111,7 +111,7 @@ backward_(Value *y) {
 			x1->grad += (1.0f - y->data * y->data) * y->grad;
 		} break;
 		default: {
-			printf("[Backward: Error]: Unknown operation\n");
+			print_error("error: Unknown operation\n");
 		} break;
 	}
 
